@@ -508,9 +508,9 @@ function interp(row,s){
 // % das mãos (aprox. Nash 6-max sem ante) por stack efetivo 5/8/10/12/15/20bb
 const PUSH={UTG:[30,22,17,14,11,9],HJ:[38,28,22,18,14,11],CO:[48,36,29,24,19,15],BTN:[62,48,40,34,28,22],SB:[85,65,55,48,40,32]};
 const CALLV={SB:[68,52,43,36,30,24],BTN:[55,42,34,28,23,18],CO:[45,34,27,22,18,14],HJ:[38,28,22,18,14,11],UTG:[32,23,18,14,11,9]};
-S.sf={mode:'any',stackSel:'any',cur:null,ans:false};
+S.sf={mode:'any',stackSel:'any',ante:false,cur:null,ans:false};
 function sfStrat(mode,pos,stack){
-  const pct=interp((mode==='push'?PUSH:CALLV)[pos],stack), m=topPct(pct), st={};
+  const pct=Math.min(100,interp((mode==='push'?PUSH:CALLV)[pos],stack)*(S.sf.ante?(mode==='push'?1.12:1.1):1)), m=topPct(pct), st={};
   for(const h of ALL){const f=m.get(h.name)||0; st[h.name]=mode==='push'?{raise:f,call:0,fold:1-f}:{raise:0,call:f,fold:1-f}}
   return {st,pct};
 }
@@ -538,7 +538,8 @@ function renderSF(){
   document.getElementById('app').innerHTML=`${modStats('sf')}
    <div class="row" style="margin-bottom:12px"><span class="mut">Modo:</span>
     <select id="sfmode" style="width:auto"><option value="any">Misto</option><option value="push">Dar all-in (push/fold)</option><option value="call">Pagar all-in (BB)</option></select>
-    <span class="mut">Stack:</span><select id="sfstack" style="width:auto"><option value="any">Aleatório</option>${[5,8,10,12,15,20].map(s=>`<option value="${s}">${s}bb</option>`).join('')}</select></div>
+    <span class="mut">Stack:</span><select id="sfstack" style="width:auto"><option value="any">Aleatório</option>${[5,8,10,12,15,20].map(s=>`<option value="${s}">${s}bb</option>`).join('')}</select>
+    <label class="row" style="margin:0"><input type="checkbox" id="sfante" ${S.sf.ante?'checked':''}> Ante no BB (como na sua casa): ranges ~10% mais largos</label></div>
    <div class="grid2"><div>
     <div class="felt"><div class="pos">Você: ${push?c.pos:'BB'} · ${c.stack}bb</div><div class="sit">${sit}</div>
      <div class="cards">${c.cards.map(x=>cardEl(x)).join('')}</div></div>
@@ -561,37 +562,50 @@ function icmEq(st,pays){
   for(let i=0;i<n;i++) if(st[i]>1e-9) alive.push(i);
   const bust=n-alive.length;
   for(let i=0;i<n;i++) if(st[i]<=1e-9) eq[i]=P.slice(n-bust).reduce((a,b)=>a+b,0)/bust;
-  (function rec(rem,place,prob){
-    if(place>=alive.length) return;
-    let t=0; for(const i of rem) t+=st[i];
-    for(const i of rem){const p=prob*st[i]/t; eq[i]+=p*P[place]; rec(rem.filter(x=>x!==i),place+1,p)}
-  })(alive,0,1);
+  const m=alive.length, N=1<<m, f=new Float64Array(N), sum=new Float64Array(N);
+  let tot=0; for(let k=0;k<m;k++) tot+=st[alive[k]];
+  for(let mask=1;mask<N;mask++){const k=31-Math.clz32(mask&-mask); sum[mask]=sum[mask&(mask-1)]+st[alive[k]]}
+  f[0]=1;
+  for(let mask=0;mask<N-1;mask++){
+    if(!f[mask]) continue;
+    let c=0,x=mask; while(x){c++;x&=x-1}
+    const rest=tot-sum[mask];
+    for(let k=0;k<m;k++){
+      if(mask>>k&1) continue;
+      const p=f[mask]*st[alive[k]]/rest; f[mask|1<<k]+=p; eq[alive[k]]+=p*P[c];
+    }
+  }
   return eq;
 }
 const ICMP=[
  {k:'sat',name:'Satélite (4 jogadores, 3 vagas)',n:4,pays:[1,1,1]},
  {k:'bubble',name:'Bolha (4 jogadores, 3 premiados)',n:4,pays:[50,30,20]},
  {k:'ft5',name:'Mesa final (5 jogadores)',n:5,pays:[40,27,18,10,5]},
- {k:'ft6',name:'Mesa final (6 jogadores)',n:6,pays:[32,22,16,12,10,8]}];
-S.ic={preset:'any',cur:null,ans:false,calcS:'25,18,12,8,5',calcP:'50,30,20'};
+ {k:'ft6',name:'Mesa final (6 jogadores)',n:6,pays:[32,22,16,12,10,8]},
+ // Premiação da casa: 1º 1100, 2º 700, 3º 400 (informados). 4º-9º são ESTIMATIVA: edite aqui.
+ {k:'casa-bolha',name:'Casa: bolha (10 jogam, 9 premiados, ante no BB)',n:10,pays:[1100,700,400,330,280,240,200,170,150],ante:1},
+ {k:'casa-bolha8',name:'Casa: bolha (9 jogam, 8 premiados, ante no BB)',n:9,pays:[1100,700,400,340,290,250,210,180],ante:1},
+ {k:'casa-ft',name:'Casa: mesa final (9 premiados, ante no BB)',n:9,pays:[1100,700,400,330,280,240,200,170,150],ante:1}];
+S.ic={preset:'any',cur:null,ans:false,calcS:'180,150,120,100,90,70,60,40,30',calcP:'1100,700,400,330,280,240,200,170,150'};
 // ctx: stacks[0]=herói no SB, stacks[1]=vilão no BB (único que pode pagar)
-function icmCtx(stacks,pays){
-  const S0=stacks[0],B=stacks[1],e=Math.min(S0,B), base=icmEq(stacks,pays), v0=base[1];
-  const w=stacks.slice(); w[0]=S0-e; w[1]=B+e;
-  const l=stacks.slice(); l[0]=S0+e; l[1]=B-e;
+function icmCtx(stacks,pays,A){
+  A=A||0;
+  const S0=stacks[0],B=stacks[1],e=Math.max(0.5,Math.min(S0,B-A)), base=icmEq(stacks,pays), v0=base[1];
+  const w=stacks.slice(); w[0]=S0-e; w[1]=B+e;               // vilão vence
+  const l=stacks.slice(); l[0]=S0+e+A; l[1]=B-e-A;           // vilão perde (ante vai para o herói)
   const vW=icmEq(w,pays)[1], vL=icmEq(l,pays)[1];
   const bf=Math.max(1,(v0-vL)/Math.max(1e-6,vW-v0));
-  const chipCall=interp(CALLV.SB,e), callPct=cl(chipCall/Math.pow(bf,1.3),3,90);
-  return {e,bf,chipCall,callPct,callMap:topPct(callPct),base};
+  const chipCall=interp(CALLV.SB,e)*(A?1.1:1), callPct=cl(chipCall/Math.pow(bf,1.3),3,90);
+  return {e,A,bf,chipCall,callPct,callMap:topPct(callPct),base};
 }
 function icmEval(ctx,stacks,pays,hc,sims){
-  const S0=stacks[0],B=stacks[1],e=ctx.e;
+  const S0=stacks[0],B=stacks[1],e=ctx.e,A=ctx.A||0;
   const V=buildVillain(ctx.callMap,[],new Set(hc),false);
   const eq=equity(hc,[],V,sims), pF=1-ctx.callPct/100;
   const I=(h,v)=>{const s=stacks.slice();s[0]=h;s[1]=v;return icmEq(s,pays)[0]};
-  const push=pF*I(S0+1,B-1)+(1-pF)*(eq*I(S0+e,B-e)+(1-eq)*I(S0-e,B+e));
+  const push=pF*I(S0+1+A,B-1-A)+(1-pF)*(eq*I(S0+e+A,B-e-A)+(1-eq)*I(S0-e,B+e));
   const fold=I(S0-0.5,B+0.5);
-  const chipPush=pF+(1-pF)*e*(2*eq-1);
+  const chipPush=pF*(1+A)+(1-pF)*(eq*(e+A)-(1-eq)*e);
   return {eq,pF,push,fold,d:push-fold,chipPush,chipD:chipPush+0.5};
 }
 function newICM(){
@@ -599,7 +613,7 @@ function newICM(){
   const sum=pr.pays.reduce((a,b)=>a+b,0), pays=pr.pays.map(p=>p*100/sum);
   const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
   const stacks=[rnd(6,20),rnd(5,28)]; for(let i=2;i<pr.n;i++) stacks.push(rnd(4,40));
-  const ctx=icmCtx(stacks,pays); let best=null;
+  const ctx=icmCtx(stacks,pays,pr.ante||0); let best=null;
   for(let t=0;t<4;t++){
     const h=wpick(ALL), hc=handToCards(h.name).map(c=>toInt(c.r,c.s));
     const r=icmEval(ctx,stacks,pays,hc,700), d=Math.abs(r.d);
@@ -614,7 +628,7 @@ function calcHTML(){
   const num=s=>s.split(/[,\s;]+/).map(parseFloat).filter(x=>x>=0&&isFinite(x));
   const st=num(S.ic.calcS), pays=num(S.ic.calcP);
   let out='<div class="mut">Informe ao menos 2 stacks e 1 prêmio.</div>';
-  if(st.length>=2&&pays.length>=1&&st.length<=9){
+  if(st.length>=2&&pays.length>=1&&st.length<=12){
     const sumP=pays.reduce((a,b)=>a+b,0)||1, np=pays.map(p=>p*100/sumP), eq=icmEq(st,np), tot=st.reduce((a,b)=>a+b,0);
     out=`<table style="width:100%;border-collapse:collapse;font-size:13px"><tr class="mut"><td>Jogador</td><td>Stack</td><td>% fichas</td><td>ICM %prêmio</td></tr>
      ${st.map((s,i)=>`<tr><td>${i+1}</td><td>${s}</td><td>${(s/tot*100).toFixed(1)}%</td><td><div class="eqbar" style="margin:2px 0;height:20px"><div class="fill" style="width:${eq[i]*100/Math.max(...eq)}%"></div><span style="top:1px">${eq[i].toFixed(2)}%</span></div></td></tr>`).join('')}</table>`;
@@ -645,7 +659,7 @@ function renderICM(){
     <select id="icpre" style="width:auto"><option value="any">Aleatória</option>${ICMP.map(p=>`<option value="${p.k}">${p.name}</option>`).join('')}</select></div>
    <div class="grid2"><div>
     <div class="felt"><div class="pos">${c.pr.name} · Premiação ${c.pays.map(p=>p.toFixed(0)+'%').join(' / ')}</div>
-     <div class="sit">Você está no <b>SB</b> com <b>${c.stacks[0]}bb</b>. Todos foldam até você; só o BB (${c.stacks[1]}bb) pode pagar. All-in ou fold?</div>
+     <div class="sit">Você está no <b>SB</b> com <b>${c.stacks[0]}bb</b>. Todos foldam até você; só o BB (${c.stacks[1]}bb) pode pagar${c.pr.ante?' e ele posta ante de 1bb':''}. All-in ou fold?</div>
      <div class="cards">${c.hc.map(x=>cardEl(intCard(x))).join('')}</div></div>
     <div class="acts"><button class="a-raise" data-do="ic:push" ${ans?'disabled':''}>All-in ${c.stacks[0]}bb<small>tecla P</small></button>
      <button class="a-fold" data-do="ic:fold" ${ans?'disabled':''}>Fold<small>tecla F</small></button></div>${vd}</div>
@@ -775,6 +789,7 @@ function changeNew(e){
   const id=e.target.id, v=e.target.value;
   if(id==='sfmode'){S.sf.mode=v;newSF();render()}
   else if(id==='sfstack'){S.sf.stackSel=v;newSF();render()}
+  else if(id==='sfante'){S.sf.ante=e.target.checked;newSF();render()}
   else if(id==='icpre'){S.ic.preset=v;newICM();render()}
 }
 function keyNew(k,e){
