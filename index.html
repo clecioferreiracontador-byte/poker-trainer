@@ -582,11 +582,11 @@ const ICMP=[
  {k:'bubble',name:'Bolha (4 jogadores, 3 premiados)',n:4,pays:[50,30,20]},
  {k:'ft5',name:'Mesa final (5 jogadores)',n:5,pays:[40,27,18,10,5]},
  {k:'ft6',name:'Mesa final (6 jogadores)',n:6,pays:[32,22,16,12,10,8]},
- // Premiação da casa: 1º 1100, 2º 700, 3º 400 (informados). 4º-9º são ESTIMATIVA: edite aqui.
- {k:'casa-bolha',name:'Casa: bolha (10 jogam, 9 premiados, ante no BB)',n:10,pays:[1100,700,400,330,280,240,200,170,150],ante:1},
- {k:'casa-bolha8',name:'Casa: bolha (9 jogam, 8 premiados, ante no BB)',n:9,pays:[1100,700,400,340,290,250,210,180],ante:1},
- {k:'casa-ft',name:'Casa: mesa final (9 premiados, ante no BB)',n:9,pays:[1100,700,400,330,280,240,200,170,150],ante:1}];
-S.ic={preset:'any',cur:null,ans:false,calcS:'180,150,120,100,90,70,60,40,30',calcP:'1100,700,400,330,280,240,200,170,150'};
+ // Premiação da casa (3k GTD, em %): 1º 27%, 2º 20%, 3º 10%; 4º em diante dividem os 43% restantes (distribuição estimada).
+ {k:'casa-bolha',name:'Casa: bolha (10 jogam, 9 premiados, ante no BB)',n:10,pays:[27,20,10,9.67,8.33,7.33,6.67,5.67,5.33],ante:1},
+ {k:'casa-bolha8',name:'Casa: bolha (9 jogam, 8 premiados, ante no BB)',n:9,pays:[27,20,10,9.67,9.17,8.5,8,7.67],ante:1},
+ {k:'casa-ft',name:'Casa: mesa final (9 premiados, ante no BB)',n:9,pays:[27,20,10,9.67,8.33,7.33,6.67,5.67,5.33],ante:1}];
+S.ic={preset:'any',cur:null,ans:false,calcS:'180,150,120,100,90,70,60,40,30',calcP:'27,20,10,9.67,8.33,7.33,6.67,5.67,5.33'};
 // ctx: stacks[0]=herói no SB, stacks[1]=vilão no BB (único que pode pagar)
 function icmCtx(stacks,pays,A){
   A=A||0;
