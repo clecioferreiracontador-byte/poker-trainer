@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Poker Trainer</title>
+<style>
+:root{
+  --bg:#0f1420;--panel:#171e2e;--panel2:#1f2840;--line:#2b3654;--txt:#e8ecf5;--mut:#8f9bb8;
+  --raise:#e5484d;--call:#30a46c;--fold:#3b4a6b;--acc:#f5b942;--ok:#30a46c;--bad:#e5484d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+h1{font-size:18px;margin:0;letter-spacing:.3px}
+h1 span{color:var(--acc)}
+nav{display:flex;gap:6px}
+nav button,.btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit}
+nav button.on{background:var(--acc);color:#1a1405;border-color:var(--acc);font-weight:600}
+.btn:hover,nav button:hover{filter:brightness(1.15)}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:110px}
+.stat b{display:block;font-size:20px}
+.stat small{color:var(--mut)}
+.grid2{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:18px;align-items:start}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:var(--panel2);color:var(--mut);cursor:pointer;user-select:none}
+.chip.on{background:#2a3a63;color:var(--txt);border-color:#4a68b5}
+.felt{background:radial-gradient(ellipse at center,#1d6b4a,#114532);border-radius:14px;padding:16px;text-align:center;border:1px solid #0b2e21}
+.felt .pos{font-size:12px;color:#bfe9d3;text-transform:uppercase;letter-spacing:1px}
+.felt .sit{margin:6px 0 12px;font-size:14px;color:#e3f6ec}
+.cards{display:flex;gap:8px;justify-content:center;margin:8px 0}
+.pc{width:58px;height:82px;border-radius:8px;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:26px;line-height:1;box-shadow:0 2px 6px #0006}
+.pc i{font-style:normal;font-size:24px}
+.pc.r{color:#d22}
+.pc.sm{width:46px;height:64px;font-size:21px}
+.pc.sm i{font-size:19px}
+.acts{display:flex;gap:8px;margin-top:14px}
+.acts button{flex:1;padding:12px 6px;border:0;border-radius:10px;color:#fff;font:600 15px inherit;cursor:pointer}
+.acts button small{display:block;font-weight:400;opacity:.8;font-size:11px}
+.acts button:disabled{opacity:.45;cursor:default}
+.a-raise{background:var(--raise)}.a-call{background:var(--call)}.a-fold{background:var(--fold)}
+.verdict{margin-top:14px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2)}
+.verdict.ok{border-color:var(--ok)}.verdict.mid{border-color:var(--acc)}.verdict.bad{border-color:var(--bad)}
+.verdict h3{margin:0 0 4px;font-size:16px}
+.bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:8px 0;font-size:11px}
+.bar div{display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden;white-space:nowrap}
+.mut{color:var(--mut)}
+.hm{display:grid;grid-template-columns:repeat(13,1fr);gap:1px;background:var(--line);border:1px solid var(--line);aspect-ratio:1;width:100%;max-width:560px}
+.hm div{display:flex;align-items:center;justify-content:center;font-size:clamp(8px,1.5vw,12px);color:#fff;background:var(--fold);position:relative;text-shadow:0 1px 2px #000a}
+.hm div.me{outline:3px solid var(--acc);outline-offset:-3px;z-index:2}
+.hidden{filter:blur(7px) grayscale(.6);opacity:.5;pointer-events:none}
+.legend{display:flex;gap:14px;font-size:12px;margin:8px 0}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+select,textarea,input[type=text]{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;width:100%}
+textarea{font:13px ui-monospace,Consolas,monospace;min-height:64px}
+label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
+.note{font-size:12.5px;color:var(--mut);margin-top:16px;border-top:1px dashed var(--line);padding-top:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.kbd{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--mut)}
+.eqbar{position:relative;height:26px;background:var(--panel2);border-radius:6px;margin:10px 0;overflow:hidden}
+.eqbar .fill{height:100%;background:var(--call)}
+.eqbar .need{position:absolute;top:0;bottom:0;width:3px;background:var(--acc)}
+.eqbar span{position:absolute;left:8px;top:3px;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>♠ Poker <span>Trainer</span> <small class="mut" style="font-weight:400">· 6-max · 100bb · NLHE</small></h1>
+  <nav id="nav">
+    <button data-t="pre" class="on">Pré-flop</button>
+    <button data-t="post">Pós-flop (equity)</button>
+    <button data-t="cb">C-bet</button>
+    <button data-t="sf">Push/Fold</button>
+    <button data-t="icm">Torneio / ICM</button>
+    <button data-t="rng">Ranges / Editor</button>
+  </nav>
+</header>
+<main id="app"></main>
+
+<script>
+/* ====================== Utilidades de mão / range ====================== */
+const RANKS = 'AKQJT98765432';
+const SUITS = ['♠','♥','♦','♣'];
+const ri = c => RANKS.indexOf(c);
+const ALL = [];                       // 169 mãos: {name,i,j,type,combos}
+for (let i=0;i<13;i++) for (let j=0;j<13;j++){
+  let name,type,combos;
+  if (i===j){name=RANKS[i]+RANKS[i];type='p';combos=6}
+  else if (i<j){name=RANKS[i]+RANKS[j]+'s';type='s';combos=4}
+  else {name=RANKS[j]+RANKS[i]+'o';type='o';combos=12}
+  ALL.push({name,i,j,type,combos});
+}
+const HAND = Object.fromEntries(ALL.map(h=>[h.name,h]));
+
+function parseRange(str){
+  const m = new Map();
+  const set=(n,f)=>m.set(n,f);
+  for (let raw of (str||'').split(',')){
+    raw = raw.trim(); if(!raw) continue;
+    let f = 1;
+    if (raw.includes(':')){ const p=raw.split(':'); raw=p[0]; f=parseFloat(p[1]); }
+    let mt;
+    if ((mt = raw.match(/^([AKQJT98765432])\1(\+)?$/))){
+      const a=ri(mt[1]); const to = mt[2]?0:a;
+      for(let k=a;k>=to;k--) set(RANKS[k]+RANKS[k],f);
+    } else if ((mt = raw.match(/^([AKQJT98765432])\1-([AKQJT98765432])\2$/))){
+      const a=ri(mt[1]),b=ri(mt[2]);
+      for(let k=Math.min(a,b);k<=Math.max(a,b);k++) set(RANKS[k]+RANKS[k],f);
+    } else if ((mt = raw.match(/^([AKQJT98765432])([AKQJT98765432])([so])(\+)?$/))){
+      const h=ri(mt[1]),l=ri(mt[2]);
+      if (mt[4]) for(let k=l;k>h;k--) set(RANKS[h]+RANKS[k]+mt[3],f);
+      else set(RANKS[h]+RANKS[l]+mt[3],f);
+    } else if ((mt = raw.match(/^([AKQJT98765432])([AKQJT98765432])([so])-\1([AKQJT98765432])\3$/))){
+      const h=ri(mt[1]),a=ri(mt[2]),b=ri(mt[4]);
+      for(let k=Math.min(a,b);k<=Math.max(a,b);k++) set(RANKS[h]+RANKS[k]+mt[3],f);
+    }
+  }
+  return m;
+}
+
+/* ====================== Cenários pré-flop (aproximações GTO 6-max 100bb) ====================== */
+const SCEN = [
+ {id:'rfi-utg',g:'Abrir (RFI)',t:'UTG abre',hero:'UTG',sit:'Todos foldaram até você. Stack 100bb.',L:{raise:'Abrir 2.5bb'},
+  r:{raise:'66+,A3s+,KTs+,QTs+,JTs,T9s,98s:0.6,87s:0.5,76s:0.5,ATo+,KQo,A9s:1,55:0.4,KJo:0.3,QJs:1'}},
+ {id:'rfi-hj',g:'Abrir (RFI)',t:'HJ abre',hero:'HJ',sit:'Todos foldaram até você. Stack 100bb.',L:{raise:'Abrir 2.5bb'},
+  r:{raise:'44+,A2s+,K8s+,Q9s+,J9s+,T9s,98s,87s,76s,65s:0.6,ATo+,KJo+,QJo:0.6,33:0.4,22:0.3,K7s:0.4'}},
+ {id:'rfi-co',g:'Abrir (RFI)',t:'CO abre',hero:'CO',sit:'Todos foldaram até você. Stack 100bb.',L:{raise:'Abrir 2.5bb'},
+  r:{raise:'22+,A2s+,K5s+,Q8s+,J8s+,T7s+,97s+,86s+,75s+,65s,54s,A8o+,KTo+,QTo+,JTo,A5o:0.4,K4s:0.4,Q6s:0.4'}},
+ {id:'rfi-btn',g:'Abrir (RFI)',t:'BTN abre',hero:'BTN',sit:'Todos foldaram até você no botão. Stack 100bb.',L:{raise:'Abrir 2.5bb'},
+  r:{raise:'22+,A2s+,K2s+,Q3s+,J5s+,T6s+,96s+,85s+,74s+,64s+,53s+,43s,A2o+,K7o+,Q9o+,J9o+,T9o,98o,K6o:0.4,Q8o:0.5,J8o:0.4,87o:0.5,T8o:0.5'}},
+ {id:'rfi-sb',g:'Abrir (RFI)',t:'SB abre',hero:'SB',sit:'Todos foldaram até o SB. Só o BB falta agir. Stack 100bb.',L:{raise:'Raise 3bb'},
+  r:{raise:'22+,A2s+,K2s+,Q4s+,J6s+,T6s+,96s+,85s+,75s+,64s+,54s,A2o+,K8o+,Q9o+,J9o+,T9o,98o:0.5,K6o:0.4,Q8o:0.5,53s:0.5'}},
+ {id:'bb-utg',g:'Defender o BB',t:'BB vs UTG',hero:'BB',sit:'UTG abre 2.5bb, todos foldam. Você está no BB (1bb já investido).',L:{raise:'3-Bet 11bb',call:'Call'},
+  r:{raise:'QQ+,AKs,AKo:0.5,A5s:0.5,A4s:0.3',call:'22-JJ,AQs-A2s,KTs+,QTs+,JTs,T9s,98s,87s,76s,65s,54s:0.6,AQo,AJo:0.5,KQo,KJs:1'}},
+ {id:'bb-co',g:'Defender o BB',t:'BB vs CO',hero:'BB',sit:'CO abre 2.5bb, todos foldam. Você está no BB.',L:{raise:'3-Bet 11bb',call:'Call'},
+  r:{raise:'JJ+,AKs,AKo,AQs:0.4,A5s-A4s,KQs:0.2,76s:0.3,65s:0.3',call:'22-TT,AQs-A2s,KQs-K6s,Q8s+,J8s+,T7s+,97s+,86s+,76s,65s,54s,43s:0.4,ATo+,KJo+,QJo,JTo,T9o:0.6,KTo:1,A9o:0.4,98o:0.3'}},
+ {id:'bb-btn',g:'Defender o BB',t:'BB vs BTN',hero:'BB',sit:'BTN abre 2.5bb, SB folda. Você está no BB.',L:{raise:'3-Bet 11bb',call:'Call'},
+  r:{raise:'JJ+,AKs,AKo,AQs:0.5,AQo:0.3,A5s-A3s,KQs:0.3,87s:0.3,76s:0.3,65s:0.3,T9s:0.2',call:'22-TT,AQs-A2s,KQs-K2s,Q2s+,J4s+,T6s+,96s+,85s+,75s+,64s+,54s,43s,A2o+,K6o+,Q8o+,J8o+,T8o+,98o,87o:0.7,76o:0.3,97o:0.4'}},
+ {id:'sb-btn',g:'Defender o SB',t:'SB vs BTN',hero:'SB',sit:'BTN abre 2.5bb. Você está no SB e o BB ainda age depois.',L:{raise:'3-Bet 10bb',call:'Call'},
+  r:{raise:'TT+,AQs+,AKo,AJs:0.5,A5s-A2s,KQs,KJs:0.4,QJs:0.3,T9s:0.4,87s:0.3,AQo:0.6,76s:0.3',call:'55-99,ATs-AJs,KTs+,QTs+,JTs,98s:0.5,AJo:0.4,KQo:0.4,AQo:1'}},
+ {id:'btn-co',g:'Enfrentando Open',t:'BTN vs CO',hero:'BTN',sit:'CO abre 2.5bb. Você está no botão (em posição). Blinds ainda agem.',L:{raise:'3-Bet 8bb',call:'Call'},
+  r:{raise:'QQ+,AKs,AKo:0.7,A5s-A3s:0.6,KQs:0.2,76s:0.2',call:'55-JJ,AQs-ATs,KQs-KTs,QJs,QTs,JTs,T9s,98s,87s,76s,65s,AQo,AJo:0.3,KQo,A9s-A6s:0.5,44:0.4,33:0.3,22:0.2,54s:0.5'}},
+ {id:'co-utg',g:'Enfrentando Open',t:'CO vs UTG',hero:'CO',sit:'UTG abre 2.5bb, HJ folda. Você está no CO.',L:{raise:'3-Bet 8bb',call:'Call'},
+  r:{raise:'QQ+,AKs,AKo:0.6,A5s:0.4',call:'66-JJ,AQs-ATs:1,KQs,KJs,QJs,JTs,T9s:0.6,98s:0.3,AQo:0.5,77:1,A9s:0.3'}},
+ {id:'btn-3b',g:'Enfrentando 3-Bet',t:'BTN abriu, BB 3-beta',hero:'BTN',sit:'Você abriu 2.5bb no BTN e o BB 3-beta para 11bb (você em posição).',L:{raise:'4-Bet 25bb',call:'Call'},
+  r:{raise:'KK+,AKs,AKo:0.6,A5s-A4s:0.6,QQ:0.3',call:'22-QQ,AQs-A6s,KQs-KTs,QJs,QTs,JTs,J9s,T9s,T8s,98s,97s:0.6,87s,76s,65s,54s:0.6,AQo,AJo,ATo:0.6,KQo,KJo:0.5,QJo:0.3'}},
+ {id:'co-3b',g:'Enfrentando 3-Bet',t:'CO abriu, BTN 3-beta',hero:'CO',sit:'Você abriu 2.5bb no CO e o BTN 3-beta para 8bb.',L:{raise:'4-Bet 20bb',call:'Call'},
+  r:{raise:'KK+,AKs,AKo:0.5,A5s:0.6,A4s:0.4,QQ:0.2',call:'55-QQ,AQs-ATs,A9s:0.5,KQs,KJs,KTs:0.6,QJs,QTs:0.5,JTs,T9s,98s,87s:0.6,76s:0.4,AQo,AJo:0.6,KQo:0.6'}},
+ {id:'utg-3b',g:'Enfrentando 3-Bet',t:'UTG abriu, BTN 3-beta',hero:'UTG',sit:'Você abriu 2.5bb no UTG e o BTN 3-beta para 8bb.',L:{raise:'4-Bet 20bb',call:'Call'},
+  r:{raise:'KK+,AKs,AKo:0.4,A5s:0.4',call:'66-QQ,AQs,AJs,ATs:0.6,KQs,KJs:0.5,QJs:0.5,JTs,T9s:0.6,98s:0.3,AQo:0.5,KQo:0.3'}},
+];
+const BYID = Object.fromEntries(SCEN.map(s=>[s.id,s]));
+
+/* ====================== Estado & persistência ====================== */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const S = {
+  tab:'pre',
+  custom: store.get('pk_ranges',{}),
+  stats: store.get('pk_stats',{total:0,score:0,ok:0,streak:0,best:0,by:{}}),
+  active: new Set(store.get('pk_active',['rfi-utg','rfi-co','rfi-btn','bb-co','bb-btn','btn-co','btn-3b'])),
+  hardOnly:false,
+  cur:null, answered:false,
+  pf:null, pfStreet:'any', pfAns:false,
+  rngSel:'rfi-utg'
+};
+const stratCache = {};
+function ranges(id){ return Object.assign({}, BYID[id].r, S.custom[id]||{}); }
+function strat(id){
+  if (stratCache[id]) return stratCache[id];
+  const R = ranges(id), out = {};
+  const rm = parseRange(R.raise), cm = parseRange(R.call);
+  for (const h of ALL){
+    const r = Math.min(1, rm.get(h.name)||0);
+    const c = Math.min(1-r, cm.get(h.name)||0);
+    out[h.name] = {raise:r, call:c, fold:Math.max(0,1-r-c)};
+  }
+  return stratCache[id]=out;
+}
+function persist(){store.set('pk_stats',S.stats);store.set('pk_active',[...S.active]);}
+
+/* ====================== Cartas ====================== */
+const pick = a => a[Math.floor(Math.random()*a.length)];
+function cardEl(c,sm){ // c = {r:0..12 (idx RANKS), s:0..3}
+  const red = c.s===1||c.s===2;
+  return `<div class="pc${red?' r':''}${sm?' sm':''}">${RANKS[c.r]==='T'?'10':RANKS[c.r]}<i>${SUITS[c.s]}</i></div>`;
+}
+function handToCards(name){
+  const h=HAND[name]; let s1=Math.floor(Math.random()*4), s2;
+  if (h.type==='p'){ do{s2=Math.floor(Math.random()*4)}while(s2===s1); }
+  else if (h.type==='s') s2=s1;
+  else { do{s2=Math.floor(Math.random()*4)}while(s2===s1); }
+  const a=ri(name[0]), b=ri(name[1]);
+  return [{r:a,s:s1},{r:b,s:s2}];
+}
+
+/* ====================== Pré-flop: render ====================== */
+function bar(p,labels){
+  const seg=(k,c)=>p[k]>0.004?`<div style="width:${p[k]*100}%;background:var(--${c})">${Math.round(p[k]*100)}% ${labels[k]||''}</div>`:'';
+  return `<div class="bar">${seg('raise','raise')}${seg('call','call')}${seg('fold','fold')}</div>`;
+}
+function cellBg(p){
+  const r=p.raise*100,c=r+p.call*100;
+  return `linear-gradient(90deg,var(--raise) 0 ${r}%,var(--call) ${r}% ${c}%,var(--fold) ${c}% 100%)`;
+}
+function gridHTML(id,me){ return gridFromStrat(strat(id),me); }
+function gridFromStrat(st,me){
+  return `<div class="hm">${ALL.map(h=>{
+    const p=st[h.name];
+    return `<div class="${h.name===me?'me':''}" style="background:${cellBg(p)}" title="${h.name}: raise ${Math.round(p.raise*100)}% / call ${Math.round(p.call*100)}% / fold ${Math.round(p.fold*100)}%">${h.name.replace(/[so]$/,'')}${h.type==='s'?'<sub>s</sub>':h.type==='o'?'<sub>o</sub>':''}</div>`;
+  }).join('')}</div>`;
+}
+function legendHTML(id){
+  const L=BYID[id].L;
+  return `<div class="legend"><span><i style="background:var(--raise)"></i>${L.raise}</span>${L.call?`<span><i style="background:var(--call)"></i>${L.call}</span>`:''}<span><i style="background:var(--fold)"></i>Fold</span></div>`;
+}
+
+function newHand(){
+  const pool=[...S.active].filter(id=>BYID[id]);
+  if(!pool.length){S.cur=null;return}
+  const id=pick(pool), st=strat(id);
+  let cand=ALL.filter(h=>{const p=st[h.name];return S.hardOnly?Math.max(p.raise,p.call,p.fold)<0.9:true});
+  if(!cand.length) cand=ALL;
+  // pesa por combos; 55% das vezes sorteia entre mãos "jogáveis" para treinar mais decisões
+  let pool2=cand;
+  if(!S.hardOnly && Math.random()<0.55){
+    const pl=cand.filter(h=>st[h.name].fold<0.97 || (h.i<7&&h.j<7)); if(pl.length) pool2=pl;
+  }
+  const tot=pool2.reduce((a,h)=>a+h.combos,0); let x=Math.random()*tot, hand=pool2[0];
+  for(const h of pool2){x-=h.combos;if(x<=0){hand=h;break}}
+  S.cur={id,hand:hand.name,cards:handToCards(hand.name)};
+  S.answered=false;
+}
+
+function renderPre(){
+  const chips=SCEN.map(s=>`<span class="chip ${S.active.has(s.id)?'on':''}" data-sc="${s.id}">${s.t}</span>`).join('');
+  const sts=S.stats, acc=sts.total?Math.round(sts.score/sts.total*100):0;
+  let left='';
+  if(!S.cur) left=`<div class="card">Selecione ao menos um cenário acima.</div>`;
+  else {
+    const sc=BYID[S.cur.id], st=strat(S.cur.id)[S.cur.hand];
+    const acts=['raise',...(sc.L.call?['call']:[]),'fold'];
+    const names={raise:sc.L.raise,call:sc.L.call,fold:'Fold'};
+    const keys={raise:'R',call:'C',fold:'F'};
+    left=`<div class="felt"><div class="pos">Você: ${sc.hero} · ${sc.g}</div>
+      <div class="sit">${sc.sit}</div>
+      <div class="cards">${S.cur.cards.map(c=>cardEl(c)).join('')}</div></div>
+      <div class="acts">${acts.map(a=>`<button class="a-${a}" data-act="${a}" ${S.answered?'disabled':''}>${names[a]}<small>tecla ${keys[a]}</small></button>`).join('')}</div>
+      <div id="vd"></div>`;
+  }
+  const rightId=S.cur?S.cur.id:null;
+  document.getElementById('app').innerHTML=`
+   <div class="stats">
+    <div class="stat"><b>${sts.total}</b><small>mãos</small></div>
+    <div class="stat"><b>${acc}%</b><small>aderência ao GTO</small></div>
+    <div class="stat"><b>${sts.streak}</b><small>sequência (recorde ${sts.best})</small></div>
+    <button class="btn" id="reset">Zerar</button>
+    <label class="row" style="margin:0"><input type="checkbox" id="hard" ${S.hardOnly?'checked':''}> só mãos difíceis (mistas)</label>
+   </div>
+   <div class="chips">${chips}</div>
+   <div class="grid2"><div>${left}</div>
+    <div class="card"><b>Range de referência</b>${rightId?legendHTML(rightId):''}
+     <div id="grid" class="${S.answered?'':'hidden'}">${rightId?gridHTML(rightId,S.answered?S.cur.hand:null):''}</div>
+     <div class="note" style="margin-top:10px;border:0;padding:0">${S.answered?'Cada célula mostra a frequência da estratégia (cores proporcionais).':'O range aparece depois que você responder.'}</div>
+    </div></div>
+   <div class="note">Os ranges são aproximações de estratégias GTO 6-max 100bb (não vêm de um solver rodando aqui). Para usar ranges exatos do seu solver, vá em <b>Ranges / Editor</b>.</div>`;
+  if(S.answered) showVerdict();
+}
+
+function answer(act){
+  if(!S.cur||S.answered) return;
+  const sc=BYID[S.cur.id]; if(act==='call'&&!sc.L.call) return;
+  const p=strat(S.cur.id)[S.cur.hand];
+  const mx=Math.max(p.raise,p.call,p.fold), sco=mx?Math.min(1,p[act]/mx):0;
+  S.cur.act=act; S.cur.score=sco;
+  const s=S.stats; s.total++; s.score+=sco;
+  const good=sco>=0.8, mid=!good&&p[act]>=0.15;
+  if(good){s.ok++;s.streak++;s.best=Math.max(s.best,s.streak)} else if(!mid) s.streak=0;
+  const b=s.by[S.cur.id]||(s.by[S.cur.id]={n:0,sc:0}); b.n++; b.sc+=sco;
+  S.answered=true; persist(); renderPre();
+}
+function showVerdict(){
+  const sc=BYID[S.cur.id], p=strat(S.cur.id)[S.cur.hand], a=S.cur.act;
+  const good=S.cur.score>=0.8, mid=!good&&p[a]>=0.15;
+  const best=['raise','call','fold'].reduce((x,y)=>p[y]>p[x]?y:x,'fold');
+  const nm={raise:sc.L.raise,call:sc.L.call||'Call',fold:'Fold'};
+  const cls=good?'ok':mid?'mid':'bad';
+  const title=good?'✓ Correto':mid?'~ Aceitável (estratégia mista)':'✗ Erro';
+  const mixed=Math.max(p.raise,p.call,p.fold)<0.9;
+  document.getElementById('vd').innerHTML=`<div class="verdict ${cls}">
+    <h3>${title}</h3>
+    <div class="mut">${S.cur.hand}: você escolheu <b>${nm[a]}</b> (${Math.round(p[a]*100)}% no GTO). Melhor ação: <b>${nm[best]}</b>${mixed?' — mão com estratégia mista, ambas as ações têm valor':''}.</div>
+    ${bar(p,{raise:sc.L.raise,call:sc.L.call,fold:'Fold'})}
+    <button class="btn" id="next">Próxima mão <span class="kbd">Enter</span></button></div>`;
+}
+
+/* ====================== Avaliador 5-7 cartas ====================== */
+function straightHigh(mask){ // bit r = rank r (0=2..12=A)
+  const m=(mask<<1)|((mask>>12)&1);
+  for(let h=13;h>=4;h--) if(((m>>(h-4))&31)===31) return h-1;
+  return -1;
+}
+function pack(l){let v=0;for(let i=0;i<5;i++)v=v*13+(l[i]||0);return v}
+function evalN(cs){
+  const rc=new Array(13).fill(0),sc=[0,0,0,0],sr=[0,0,0,0];
+  for(let i=0;i<cs.length;i++){const c=cs[i],r=c>>2,s=c&3;rc[r]++;sc[s]++;sr[s]|=1<<r}
+  let fl=-1; for(let s=0;s<4;s++) if(sc[s]>=5) fl=s;
+  if(fl>=0){const sh=straightHigh(sr[fl]); if(sh>=0) return 8e9+sh}
+  const q=[],t=[],p=[],k=[];
+  for(let r=12;r>=0;r--){const n=rc[r]; if(n===4)q.push(r); else if(n===3)t.push(r); else if(n===2)p.push(r); if(n>0)k.push(r)}
+  if(q.length){const kk=k.filter(r=>r!==q[0]);return 7e9+pack([q[0],kk[0]])}
+  if(t.length&&(t.length>1||p.length)){return 6e9+pack([t[0],t.length>1?Math.max(t[1],p[0]??-1):p[0]])}
+  if(fl>=0){const l=[];for(let r=12;r>=0&&l.length<5;r--)if(sr[fl]>>r&1)l.push(r);return 5e9+pack(l)}
+  let mask=0;for(let r=0;r<13;r++)if(rc[r])mask|=1<<r;
+  const sh=straightHigh(mask); if(sh>=0) return 4e9+sh;
+  if(t.length){const kk=k.filter(r=>r!==t[0]);return 3e9+pack([t[0],kk[0],kk[1]])}
+  if(p.length>=2){const kk=k.filter(r=>r!==p[0]&&r!==p[1]);return 2e9+pack([p[0],p[1],kk[0]])}
+  if(p.length){const kk=k.filter(r=>r!==p[0]);return 1e9+pack([p[0],kk[0],kk[1],kk[2]])}
+  return pack(k.slice(0,5));
+}
+const HNAMES=['Carta alta','Par','Dois pares','Trinca','Sequência','Flush','Full house','Quadra','Straight flush'];
+const catOf=v=>Math.floor(v/1e9);
+
+/* ====================== Equity Monte Carlo ====================== */
+// cartas como inteiro: rank(0=2..12=A)*4 + naipe. Nosso RANKS usa A=0, então convertemos.
+const toInt=(r,s)=>(12-r)*4+s;
+function combosOf(name,dead){
+  const h=HAND[name], a=12-ri(name[0]), b=12-ri(name[1]), out=[];
+  for(let s1=0;s1<4;s1++)for(let s2=0;s2<4;s2++){
+    if(h.type==='p'&&s2<=s1) continue;
+    if(h.type==='s'&&s1!==s2) continue;
+    if(h.type==='o'&&s1===s2) continue;
+    const c1=a*4+s1,c2=b*4+s2;
+    if(dead.has(c1)||dead.has(c2)||c1===c2) continue;
+    out.push([c1,c2]);
+  }
+  return out;
+}
+function buildVillain(rangeMap,board,dead,betRange){
+  let list=[];
+  for(const [n,f] of rangeMap){ if(f<=0) continue; for(const c of combosOf(n,dead)) list.push({c,w:f}); }
+  if(betRange&&board.length){
+    for(const x of list) x.v=evalN(board.concat(x.c));
+    list.sort((a,b)=>a.v-b.v);
+    const cut=Math.floor(list.length*0.5);
+    list.forEach((x,i)=>{ if(i<cut) x.w*=0.25 });
+  }
+  let acc=0; const cum=list.map(x=>acc+=x.w);
+  return {list,cum,total:acc};
+}
+function equity(hero,board,V,sims){
+  const dead=new Set([...hero,...board]); const deck=[];
+  for(let c=0;c<52;c++) if(!dead.has(c)) deck.push(c);
+  const need=5-board.length; let win=0;
+  for(let i=0;i<sims;i++){
+    let v,tries=0;
+    do{
+      const x=Math.random()*V.total; let lo=0,hi=V.cum.length-1;
+      while(lo<hi){const m=(lo+hi)>>1; if(V.cum[m]>=x)hi=m;else lo=m+1}
+      v=V.list[lo].c; tries++;
+    }while(tries<20&&(v[0]===hero[0]||v[0]===hero[1]||v[1]===hero[0]||v[1]===hero[1]));
+    const drawn=[];
+    while(drawn.length<need){
+      const c=deck[(Math.random()*deck.length)|0];
+      if(c===v[0]||c===v[1]||drawn.includes(c)) continue; drawn.push(c);
+    }
+    const bd=board.concat(drawn);
+    const h=evalN(hero.concat(bd)), o=evalN(v.concat(bd));
+    win += h>o?1:h===o?0.5:0;
+  }
+  return win/sims;
+}
+
+/* ====================== Pós-flop ====================== */
+const POTS={flop:5.5,turn:11,river:22};
+function intCard(c){const r=c>>2,s=c&3;return {r:12-r,s}}
+function newPostflop(){
+  const pos=pick(['UTG','CO','BTN']);
+  const heroSt=strat('bb-'+pos.toLowerCase()), vil=strat('rfi-'+pos.toLowerCase());
+  const heroMap=new Map(), vilMap=new Map();
+  for(const h of ALL){heroMap.set(h.name,heroSt[h.name].call+heroSt[h.name].raise*0.5); vilMap.set(h.name,vil[h.name].raise)}
+  const street=S.pfStreet==='any'?pick(['flop','turn','river']):S.pfStreet;
+  const nb={flop:3,turn:4,river:5}[street];
+  const frac=pick([0.33,0.5,0.75,1.0]);
+  const pot=POTS[street], bet=+(pot*frac).toFixed(1), req=bet/(pot+2*bet);
+  let best=null;
+  for(let t=0;t<4;t++){
+    const tot=[...heroMap.values()].reduce((a,b,i)=>a+b*ALL[i].combos,0); let x=Math.random()*tot,hn='72o';
+    let idx=0; for(const [n,f] of heroMap){x-=f*HAND[n].combos; if(x<=0){hn=n;break}}
+    const hc=handToCards(hn).map(c=>toInt(c.r,c.s));
+    const deadH=new Set(hc), board=[];
+    while(board.length<nb){const c=(Math.random()*52)|0; if(!deadH.has(c)&&!board.includes(c)) board.push(c)}
+    const dead=new Set([...hc,...board]);
+    const V=buildVillain(vilMap,board,dead,true);
+    if(!V.total) continue;
+    const e=equity(hc,board,V,500);
+    const d=Math.abs(e-req);
+    if(!best||d<best.d) best={d,hc,board,V,hn};
+  }
+  const eq=equity(best.hc,best.board,best.V,6000);
+  S.pf={pos,street,pot,bet,frac,req,eq,hc:best.hc,board:best.board,hn:best.hn,
+        made:HNAMES[catOf(evalN(best.hc.concat(best.board)))]};
+  S.pfAns=false;
+}
+function renderPost(){
+  if(!S.pf) newPostflop();
+  const p=S.pf, ev=p.eq*(p.pot+p.bet)-(1-p.eq)*p.bet;
+  const stn={flop:'Flop',turn:'Turn',river:'River'}[p.street];
+  document.getElementById('app').innerHTML=`
+   <div class="row" style="margin-bottom:12px"><span class="mut">Street:</span>
+     <select id="street" style="width:auto"><option value="any">Aleatória</option><option value="flop">Flop</option><option value="turn">Turn</option><option value="river">River</option></select></div>
+   <div class="grid2"><div>
+    <div class="felt"><div class="pos">Você: BB · ${stn}</div>
+     <div class="sit">${p.pos} abriu 2.5bb e você pagou no BB. Pote: <b>${p.pot}bb</b>. O vilão aposta <b>${p.bet}bb</b> (${Math.round(p.frac*100)}% do pote).</div>
+     <div class="cards">${p.board.map(c=>cardEl(intCard(c),true)).join('')}</div>
+     <div class="cards">${p.hc.map(c=>cardEl(intCard(c))).join('')}</div></div>
+    <div class="acts"><button class="a-call" data-pf="call" ${S.pfAns?'disabled':''}>Call ${p.bet}bb<small>tecla C</small></button>
+      <button class="a-fold" data-pf="fold" ${S.pfAns?'disabled':''}>Fold<small>tecla F</small></button></div>
+    <div id="pfv"></div>
+   </div>
+   <div class="card"><b>Como funciona</b>
+    <p class="mut">Calculamos sua equity contra o <b>range de aposta</b> do vilão (o range de abertura de ${p.pos}, com peso maior nas mãos que já fazem mão no board e peso menor nos blefes/draws), por simulação Monte Carlo (6.000 sorteios).</p>
+    <p class="mut">Regra base: pagar quando <b>equity ≥ pot odds</b> (bet ÷ (pote + 2×bet)). Não considera implied odds, fold equity ou raise — é um treino de decisão de call/fold, não um solver completo.</p></div></div>`;
+  document.getElementById('street').value=S.pfStreet;
+  if(S.pfAns){
+    const call=S.pfChoice==='call', right=(p.eq>=p.req)===call, close=Math.abs(p.eq-p.req)<0.03;
+    document.getElementById('pfv').innerHTML=`<div class="verdict ${right?'ok':close?'mid':'bad'}">
+     <h3>${right?'✓ Correto':close?'~ Decisão apertada':'✗ Erro'}</h3>
+     <div class="mut">Sua mão: <b>${p.made}</b> · Você tem <b>${(p.eq*100).toFixed(1)}%</b> de equity e precisa de <b>${(p.req*100).toFixed(1)}%</b>.</div>
+     <div class="eqbar"><div class="fill" style="width:${p.eq*100}%"></div><div class="need" style="left:${p.req*100}%"></div><span>equity ${(p.eq*100).toFixed(1)}% | mínimo ${(p.req*100).toFixed(1)}%</span></div>
+     <div class="mut">EV do call: <b style="color:${ev>=0?'var(--ok)':'var(--bad)'}">${ev>=0?'+':''}${ev.toFixed(2)}bb</b> (fold = 0). Melhor: <b>${ev>=0?'Call':'Fold'}</b>.</div>
+     <div style="margin-top:8px"><button class="btn" id="pfnext">Próxima mão <span class="kbd">Enter</span></button></div></div>`;
+  }
+}
+
+/* ====================== Ranges / Editor ====================== */
+function renderRng(){
+  const id=S.rngSel, sc=BYID[id], R=ranges(id);
+  const opts=SCEN.map(s=>`<option value="${s.id}" ${s.id===id?'selected':''}>${s.g} — ${s.t}</option>`).join('');
+  const pct=k=>{const st=strat(id);let n=0;for(const h of ALL)n+=st[h.name][k]*h.combos;return (n/1326*100).toFixed(1)};
+  document.getElementById('app').innerHTML=`<div class="grid2"><div class="card">
+    <label>Cenário</label><select id="rsel">${opts}</select>
+    <div class="mut" style="margin-top:8px">${sc.sit}</div>
+    <label>Range de ${sc.L.raise} (raise)</label><textarea id="er">${R.raise||''}</textarea>
+    ${sc.L.call?`<label>Range de ${sc.L.call}</label><textarea id="ec">${R.call||''}</textarea>`:''}
+    <div class="row" style="margin-top:10px"><button class="btn" id="save">Aplicar</button><button class="btn" id="restore">Restaurar padrão</button></div>
+    <div class="note">Formato: <code>22+, A2s+, KTo+, A5s-A2s, T9s, 87s:0.5</code> (":0.5" = 50% de frequência). A ação "fold" é o restante. Cole aqui o range exportado do seu solver para treinar com números exatos.</div>
+   </div>
+   <div class="card"><b>${sc.t}</b>${legendHTML(id)}${gridHTML(id,null)}
+    <div class="mut" style="margin-top:8px">${sc.L.raise}: ${pct('raise')}% das mãos${sc.L.call?` · ${sc.L.call}: ${pct('call')}%`:''}</div></div></div>`;
+}
+
+/* ====================== Helpers comuns dos novos módulos ====================== */
+S.ms=store.get('pk_ms',{});
+function tally(k,sc){
+  const m=S.ms[k]||(S.ms[k]={n:0,sc:0,streak:0,best:0});
+  m.n++;m.sc+=sc;
+  if(sc>=0.8){m.streak++;m.best=Math.max(m.best,m.streak)} else if(sc<0.15) m.streak=0;
+  store.set('pk_ms',S.ms);
+}
+function modStats(k){
+  const m=S.ms[k]||{n:0,sc:0,streak:0,best:0};
+  return `<div class="stats"><div class="stat"><b>${m.n}</b><small>decisões</small></div>
+   <div class="stat"><b>${m.n?Math.round(m.sc/m.n*100):0}%</b><small>aderência</small></div>
+   <div class="stat"><b>${m.streak}</b><small>sequência (recorde ${m.best})</small></div></div>`;
+}
+const cl=(x,a,b)=>Math.max(a,Math.min(b,x));
+function wpick(list){const t=list.reduce((a,h)=>a+h.combos,0);let x=Math.random()*t;for(const h of list){x-=h.combos;if(x<=0)return h}return list[0]}
+function sampleHand(map){
+  const l=ALL.filter(h=>(map.get(h.name)||0)>0);
+  const t=l.reduce((a,h)=>a+h.combos*map.get(h.name),0);let x=Math.random()*t;
+  for(const h of l){x-=h.combos*map.get(h.name);if(x<=0)return h.name}
+  return l[0].name;
+}
+function gradeCls(sc,p){return sc>=0.8?['ok','✓ Correto']:p>=0.15?['mid','~ Aceitável (estratégia mista)']:['bad','✗ Erro']}
+function bar2(items){
+  return `<div class="bar">${items.filter(i=>i.p>0.004).map(i=>`<div style="width:${i.p*100}%;background:var(--${i.c})">${Math.round(i.p*100)}% ${i.l}</div>`).join('')}</div>`;
+}
+function vbox(cls,title,inner,next){
+  return `<div class="verdict ${cls}"><h3>${title}</h3>${inner}<div style="margin-top:8px"><button class="btn" data-do="${next}">Próxima mão <span class="kbd">Enter</span></button></div></div>`;
+}
+function legendFrom(items){return `<div class="legend">${items.map(i=>`<span><i style="background:var(--${i[0]})"></i>${i[1]}</span>`).join('')}</div>`}
+
+/* ====================== Push/Fold (stacks curtos) ====================== */
+const RANKSTR='AA,KK,QQ,JJ,TT,99,AKs,AQs,AKo,88,AJs,AQo,KQs,ATs,AJo,77,KJs,A9s,ATo,KTs,KQo,A8s,QJs,66,A7s,A5s,A9o,KJo,A6s,A4s,QTs,A3s,K9s,A2s,KTo,55,JTs,A8o,QJo,K8s,Q9s,A7o,J9s,K7s,QTo,A5o,44,K6s,T9s,A4o,K9o,JTo,Q8s,K5s,A6o,A3o,J8s,K4s,33,98s,A2o,T8s,Q9o,K3s,Q7s,K2s,J9o,87s,K8o,Q6s,22,97s,T9o,J7s,Q5s,76s,K7o,Q4s,J8o,T7s,Q3s,86s,65s,98o,K6o,Q2s,J6s,Q8o,96s,T8o,54s,K5o,J5s,87o,75s,J4s,K4o';
+const RANK_ORDER=(()=>{
+  const a=[...new Set(RANKSTR.split(',').filter(x=>HAND[x]))], seen=new Set(a);
+  const rest=ALL.filter(h=>!seen.has(h.name)).sort((x,y)=>(x.i+x.j)-(y.i+y.j)||x.i-y.i).map(h=>h.name);
+  return a.concat(rest);
+})();
+const CUM={}; (()=>{let c=0;for(const n of RANK_ORDER){c+=HAND[n].combos;CUM[n]=c}})();
+function topPct(pct){
+  let budget=pct/100*1326; const m=new Map();
+  for(const n of RANK_ORDER){ if(budget<=0)break; const c=HAND[n].combos; m.set(n,Math.min(1,budget/c)); budget-=c; }
+  return m;
+}
+const STK=[5,8,10,12,15,20];
+function interp(row,s){
+  if(s<=STK[0])return row[0]; if(s>=STK[5])return row[5];
+  for(let i=0;i<5;i++) if(s<=STK[i+1]){const t=(s-STK[i])/(STK[i+1]-STK[i]);return row[i]+(row[i+1]-row[i])*t}
+}
+// % das mãos (aprox. Nash 6-max sem ante) por stack efetivo 5/8/10/12/15/20bb
+const PUSH={UTG:[30,22,17,14,11,9],HJ:[38,28,22,18,14,11],CO:[48,36,29,24,19,15],BTN:[62,48,40,34,28,22],SB:[85,65,55,48,40,32]};
+const CALLV={SB:[68,52,43,36,30,24],BTN:[55,42,34,28,23,18],CO:[45,34,27,22,18,14],HJ:[38,28,22,18,14,11],UTG:[32,23,18,14,11,9]};
+S.sf={mode:'any',stackSel:'any',cur:null,ans:false};
+function sfStrat(mode,pos,stack){
+  const pct=interp((mode==='push'?PUSH:CALLV)[pos],stack), m=topPct(pct), st={};
+  for(const h of ALL){const f=m.get(h.name)||0; st[h.name]=mode==='push'?{raise:f,call:0,fold:1-f}:{raise:0,call:f,fold:1-f}}
+  return {st,pct};
+}
+function newSF(){
+  const mode=S.sf.mode==='any'?pick(['push','call']):S.sf.mode;
+  const pos=pick(['UTG','HJ','CO','BTN','SB']);
+  const stack=S.sf.stackSel==='any'?5+Math.floor(Math.random()*16):+S.sf.stackSel;
+  const {st,pct}=sfStrat(mode,pos,stack), bnd=pct/100*1326;
+  let h;
+  if(Math.random()<0.6){let b=null;for(let i=0;i<3;i++){const x=wpick(ALL),d=Math.abs(CUM[x.name]-bnd);if(!b||d<b.d)b={d,x}}h=b.x}
+  else h=wpick(ALL);
+  S.sf.cur={mode,pos,stack,st,pct,hn:h.name,cards:handToCards(h.name)}; S.sf.ans=false;
+}
+function renderSF(){
+  if(!S.sf.cur)newSF();
+  const c=S.sf.cur, push=c.mode==='push', p=c.st[c.hn], ans=S.sf.ans;
+  const sit=push?`Todos foldam até você (<b>${c.pos}</b>). Stack efetivo <b>${c.stack}bb</b>, blinds 0.5/1, sem ante. All-in ou fold?`
+                :`<b>${c.pos}</b> dá all-in de <b>${c.stack}bb</b> e todos foldam até você no <b>BB</b>. Call ou fold?`;
+  let vd='';
+  if(ans){
+    const pa=p.raise+p.call, f=c.act==='act'?pa:p.fold, [cls,title]=gradeCls(c.score,f);
+    vd=vbox(cls,title,`<div class="mut">${c.hn}: você escolheu <b>${c.act==='act'?(push?'All-in':'Call'):'Fold'}</b> (${Math.round(f*100)}% no modelo). Range ${push?'de push':'de call'} de ${c.pos} a ${c.stack}bb: <b>${c.pct.toFixed(1)}%</b> das mãos.</div>
+      ${bar2([{p:pa,c:push?'raise':'call',l:push?'All-in':'Call'},{p:p.fold,c:'fold',l:'Fold'}])}`,'sf:next');
+  }
+  document.getElementById('app').innerHTML=`${modStats('sf')}
+   <div class="row" style="margin-bottom:12px"><span class="mut">Modo:</span>
+    <select id="sfmode" style="width:auto"><option value="any">Misto</option><option value="push">Dar all-in (push/fold)</option><option value="call">Pagar all-in (BB)</option></select>
+    <span class="mut">Stack:</span><select id="sfstack" style="width:auto"><option value="any">Aleatório</option>${[5,8,10,12,15,20].map(s=>`<option value="${s}">${s}bb</option>`).join('')}</select></div>
+   <div class="grid2"><div>
+    <div class="felt"><div class="pos">Você: ${push?c.pos:'BB'} · ${c.stack}bb</div><div class="sit">${sit}</div>
+     <div class="cards">${c.cards.map(x=>cardEl(x)).join('')}</div></div>
+    <div class="acts"><button class="a-${push?'raise':'call'}" data-do="sf:act" ${ans?'disabled':''}>${push?'All-in':'Call'} ${c.stack}bb<small>tecla ${push?'P':'C'}</small></button>
+     <button class="a-fold" data-do="sf:fold" ${ans?'disabled':''}>Fold<small>tecla F</small></button></div>${vd}</div>
+    <div class="card"><b>Range de referência (${c.stack}bb)</b>${legendFrom([[push?'raise':'call',push?'All-in':'Call'],['fold','Fold']])}
+     <div class="${ans?'':'hidden'}">${gridFromStrat(c.st,ans?c.hn:null)}</div>
+     <div class="note" style="border:0;padding:0;margin-top:10px">Ranges aproximam o Nash push/fold: a % de mãos é interpolada por posição e stack, ordenando as mãos por força. Mãos de fronteira têm frequência fracionada.</div></div></div>`;
+  document.getElementById('sfmode').value=S.sf.mode; document.getElementById('sfstack').value=S.sf.stackSel;
+}
+function sfAnswer(a){
+  const c=S.sf.cur; if(!c||S.sf.ans) return;
+  const p=c.st[c.hn], pa=p.raise+p.call, f=a==='act'?pa:p.fold, mx=Math.max(pa,p.fold);
+  c.act=a; c.score=mx?Math.min(1,f/mx):0; S.sf.ans=true; tally('sf',c.score); render();
+}
+
+/* ====================== ICM ====================== */
+function icmEq(st,pays){
+  const n=st.length, P=pays.concat(Array(Math.max(0,n-pays.length)).fill(0)), eq=Array(n).fill(0), alive=[];
+  for(let i=0;i<n;i++) if(st[i]>1e-9) alive.push(i);
+  const bust=n-alive.length;
+  for(let i=0;i<n;i++) if(st[i]<=1e-9) eq[i]=P.slice(n-bust).reduce((a,b)=>a+b,0)/bust;
+  (function rec(rem,place,prob){
+    if(place>=alive.length) return;
+    let t=0; for(const i of rem) t+=st[i];
+    for(const i of rem){const p=prob*st[i]/t; eq[i]+=p*P[place]; rec(rem.filter(x=>x!==i),place+1,p)}
+  })(alive,0,1);
+  return eq;
+}
+const ICMP=[
+ {k:'sat',name:'Satélite (4 jogadores, 3 vagas)',n:4,pays:[1,1,1]},
+ {k:'bubble',name:'Bolha (4 jogadores, 3 premiados)',n:4,pays:[50,30,20]},
+ {k:'ft5',name:'Mesa final (5 jogadores)',n:5,pays:[40,27,18,10,5]},
+ {k:'ft6',name:'Mesa final (6 jogadores)',n:6,pays:[32,22,16,12,10,8]}];
+S.ic={preset:'any',cur:null,ans:false,calcS:'25,18,12,8,5',calcP:'50,30,20'};
+// ctx: stacks[0]=herói no SB, stacks[1]=vilão no BB (único que pode pagar)
+function icmCtx(stacks,pays){
+  const S0=stacks[0],B=stacks[1],e=Math.min(S0,B), base=icmEq(stacks,pays), v0=base[1];
+  const w=stacks.slice(); w[0]=S0-e; w[1]=B+e;
+  const l=stacks.slice(); l[0]=S0+e; l[1]=B-e;
+  const vW=icmEq(w,pays)[1], vL=icmEq(l,pays)[1];
+  const bf=Math.max(1,(v0-vL)/Math.max(1e-6,vW-v0));
+  const chipCall=interp(CALLV.SB,e), callPct=cl(chipCall/Math.pow(bf,1.3),3,90);
+  return {e,bf,chipCall,callPct,callMap:topPct(callPct),base};
+}
+function icmEval(ctx,stacks,pays,hc,sims){
+  const S0=stacks[0],B=stacks[1],e=ctx.e;
+  const V=buildVillain(ctx.callMap,[],new Set(hc),false);
+  const eq=equity(hc,[],V,sims), pF=1-ctx.callPct/100;
+  const I=(h,v)=>{const s=stacks.slice();s[0]=h;s[1]=v;return icmEq(s,pays)[0]};
+  const push=pF*I(S0+1,B-1)+(1-pF)*(eq*I(S0+e,B-e)+(1-eq)*I(S0-e,B+e));
+  const fold=I(S0-0.5,B+0.5);
+  const chipPush=pF+(1-pF)*e*(2*eq-1);
+  return {eq,pF,push,fold,d:push-fold,chipPush,chipD:chipPush+0.5};
+}
+function newICM(){
+  const pr=S.ic.preset==='any'?pick(ICMP):ICMP.find(p=>p.k===S.ic.preset);
+  const sum=pr.pays.reduce((a,b)=>a+b,0), pays=pr.pays.map(p=>p*100/sum);
+  const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const stacks=[rnd(6,20),rnd(5,28)]; for(let i=2;i<pr.n;i++) stacks.push(rnd(4,40));
+  const ctx=icmCtx(stacks,pays); let best=null;
+  for(let t=0;t<4;t++){
+    const h=wpick(ALL), hc=handToCards(h.name).map(c=>toInt(c.r,c.s));
+    const r=icmEval(ctx,stacks,pays,hc,700), d=Math.abs(r.d);
+    if(!best||d<best.d) best={d,h,hc};
+  }
+  S.ic.cur={pr,pays,stacks,ctx,hn:best.h.name,hc:best.hc,res:icmEval(ctx,stacks,pays,best.hc,5000)}; S.ic.ans=false;
+}
+function icCalc(){
+  S.ic.calcS=document.getElementById('icst').value; S.ic.calcP=document.getElementById('icpay').value; render();
+}
+function calcHTML(){
+  const num=s=>s.split(/[,\s;]+/).map(parseFloat).filter(x=>x>=0&&isFinite(x));
+  const st=num(S.ic.calcS), pays=num(S.ic.calcP);
+  let out='<div class="mut">Informe ao menos 2 stacks e 1 prêmio.</div>';
+  if(st.length>=2&&pays.length>=1&&st.length<=9){
+    const sumP=pays.reduce((a,b)=>a+b,0)||1, np=pays.map(p=>p*100/sumP), eq=icmEq(st,np), tot=st.reduce((a,b)=>a+b,0);
+    out=`<table style="width:100%;border-collapse:collapse;font-size:13px"><tr class="mut"><td>Jogador</td><td>Stack</td><td>% fichas</td><td>ICM %prêmio</td></tr>
+     ${st.map((s,i)=>`<tr><td>${i+1}</td><td>${s}</td><td>${(s/tot*100).toFixed(1)}%</td><td><div class="eqbar" style="margin:2px 0;height:20px"><div class="fill" style="width:${eq[i]*100/Math.max(...eq)}%"></div><span style="top:1px">${eq[i].toFixed(2)}%</span></div></td></tr>`).join('')}</table>`;
+  }
+  return `<div class="card" style="margin-top:18px"><b>Calculadora ICM (Malmuth-Harville)</b>
+   <label>Stacks (separados por vírgula)</label><input type="text" id="icst" value="${S.ic.calcS}">
+   <label>Premiação (1º, 2º, 3º…)</label><input type="text" id="icpay" value="${S.ic.calcP}">
+   <div style="margin:10px 0"><button class="btn" data-do="ic:calc">Calcular</button></div>${out}</div>`;
+}
+function renderICM(){
+  if(!S.ic.cur)newICM();
+  const c=S.ic.cur, r=c.res, ans=S.ic.ans, names=['Você (SB)','Vilão (BB)'];
+  const rows=c.stacks.map((s,i)=>`<tr style="${i===0?'color:var(--acc);font-weight:600':''}"><td>${names[i]||'Jogador '+String.fromCharCode(65+i)}</td><td>${s}bb</td><td>${c.ctx.base[i].toFixed(1)}%</td></tr>`).join('');
+  let vd='';
+  if(ans){
+    const pPush=cl(0.5+r.d/0.8,0,1), f=c.act==='push'?pPush:1-pPush, sc=f/Math.max(pPush,1-pPush), [cls,title]=gradeCls(sc,f);
+    const best=r.d>0?'Push':'Fold', chipBest=r.chipD>0?'Push':'Fold';
+    vd=vbox(sc>=0.8?'ok':sc>=0.4?'mid':'bad',sc>=0.8?'✓ Correto':sc>=0.4?'~ Decisão apertada':'✗ Erro',`
+      <div class="mut">Melhor pelo ICM: <b>${best}</b> (Δ ${r.d>=0?'+':''}${r.d.toFixed(2)}% do prêmio). Pelo chipEV puro: <b>${chipBest}</b>${best!==chipBest?' — <b>o ICM muda a decisão!</b>':''}.</div>
+      <ul class="mut" style="margin:8px 0 0 18px;padding:0">
+       <li>Equity de ${c.hn} contra o range de call do vilão: <b>${(r.eq*100).toFixed(1)}%</b></li>
+       <li>Vilão paga ~<b>${c.ctx.callPct.toFixed(0)}%</b> das mãos (chipEV ${c.ctx.chipCall.toFixed(0)}%, ajustado por bubble factor ${c.ctx.bf.toFixed(2)})</li>
+       <li>chipEV: push <b>${r.chipPush.toFixed(2)}bb</b> vs fold <b>-0.50bb</b></li>
+       <li>$EV: push <b>${r.push.toFixed(2)}%</b> vs fold <b>${r.fold.toFixed(2)}%</b> do prêmio total</li></ul>`,'ic:next');
+  }
+  document.getElementById('app').innerHTML=`${modStats('icm')}
+   <div class="row" style="margin-bottom:12px"><span class="mut">Estrutura:</span>
+    <select id="icpre" style="width:auto"><option value="any">Aleatória</option>${ICMP.map(p=>`<option value="${p.k}">${p.name}</option>`).join('')}</select></div>
+   <div class="grid2"><div>
+    <div class="felt"><div class="pos">${c.pr.name} · Premiação ${c.pays.map(p=>p.toFixed(0)+'%').join(' / ')}</div>
+     <div class="sit">Você está no <b>SB</b> com <b>${c.stacks[0]}bb</b>. Todos foldam até você; só o BB (${c.stacks[1]}bb) pode pagar. All-in ou fold?</div>
+     <div class="cards">${c.hc.map(x=>cardEl(intCard(x))).join('')}</div></div>
+    <div class="acts"><button class="a-raise" data-do="ic:push" ${ans?'disabled':''}>All-in ${c.stacks[0]}bb<small>tecla P</small></button>
+     <button class="a-fold" data-do="ic:fold" ${ans?'disabled':''}>Fold<small>tecla F</small></button></div>${vd}</div>
+    <div class="card"><b>Mesa</b><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px">
+     <tr class="mut"><td>Jogador</td><td>Stack</td><td>ICM (% prêmio)</td></tr>${rows}</table>
+     <div class="note">O vilão paga com um range derivado do chipEV e reduzido pelo <i>bubble factor</i> do ICM. Compara-se o valor esperado em % do prêmio (ICM Malmuth-Harville) de dar all-in vs. foldar. É um modelo simplificado com um único vilão ativo.</div></div></div>
+   ${calcHTML()}`;
+  document.getElementById('icpre').value=S.ic.preset;
+}
+function icAnswer(a){
+  if(!S.ic.cur||S.ic.ans) return;
+  const r=S.ic.cur.res, pPush=cl(0.5+r.d/0.8,0,1), f=a==='push'?pPush:1-pPush;
+  S.ic.cur.act=a; S.ic.ans=true; tally('icm',f/Math.max(pPush,1-pPush)); render();
+}
+
+/* ====================== C-bet ====================== */
+function boardTexture(board){
+  const rs=board.map(c=>c>>2).sort((a,b)=>b-a), sc=[0,0,0,0]; board.forEach(c=>sc[c&3]++);
+  const maxS=Math.max(...sc), paired=new Set(rs).size<rs.length; let conn=0;
+  for(let i=0;i<rs.length-1;i++){const g=rs[i]-rs[i+1]; conn+= g===1?1:g===2?0.6:g===3?0.25:0}
+  const wet=cl((maxS>=3?0.55:maxS===2?0.3:0)+conn*0.25-(paired?0.15:0),0,1);
+  const label=`${RANKS[12-rs[0]]}-high, ${paired?'pareada, ':''}${maxS>=3?'monotone':maxS===2?'duas cores':'arco-íris'}, ${wet>0.55?'molhada':wet>0.3?'semi-molhada':'seca'}`;
+  return {wet,label};
+}
+function handLabel(hc,board){
+  const all=hc.concat(board), cat=catOf(evalN(all)), hr=hc.map(c=>c>>2), br=board.map(c=>c>>2).sort((a,b)=>b-a);
+  let made=HNAMES[cat];
+  if(cat===1){
+    if(hr[0]===hr[1]) made=hr[0]>br[0]?'Overpair':'Pocket pair abaixo do board';
+    else{const pr=hr.find(r=>br.includes(r)); made=pr===br[0]?'Top pair':pr===br[1]?'Par médio':'Par baixo'}
+  }
+  const tags=[]; const sc=[0,0,0,0]; all.forEach(c=>sc[c&3]++);
+  if(cat<5&&sc.some((n,s)=>n===4&&hc.some(c=>(c&3)===s))) tags.push('flush draw');
+  if(cat<4){let mask=0;all.forEach(c=>mask|=1<<(c>>2));let outs=0;
+    for(let r=0;r<13;r++) if(!(mask>>r&1)&&straightHigh(mask|1<<r)>=0) outs++;
+    if(outs>=2) tags.push('OESD'); else if(outs===1) tags.push('gutshot')}
+  return made+(tags.length?' + '+tags.join(' + '):'');
+}
+function sdv(hero,board,V){
+  let w=0,t=0; const h=evalN(hero.concat(board));
+  for(const x of V.list){const o=evalN(x.c.concat(board)); w+=x.w*(h>o?1:h===o?0.5:0); t+=x.w}
+  return w/t;
+}
+function rangeEq(heroMap,vilMap,board,n,sims){
+  let s=0,k=0; const bd=new Set(board);
+  for(let i=0;i<n;i++){
+    const cs=combosOf(sampleHand(heroMap),bd); if(!cs.length) continue;
+    const hc=pick(cs), V=buildVillain(vilMap,board,new Set([...bd,...hc]),false); if(!V.total) continue;
+    s+=equity(hc,board,V,sims); k++;
+  }
+  return k?s/k:0.5;
+}
+function cbStrat(f){
+  const dr=f.eq-f.sd, adv=cl(f.adv,-0.3,1.2), w=f.wet; let bet,big,cls;
+  if(f.sd>=0.85){cls='Mão muito forte (valor)';bet=1-(0.08+0.17*(1-w)*(adv<0.5?1:0.4));big=0.35+0.5*w}
+  else if(f.sd>=0.65){cls='Mão forte (valor/proteção)';bet=cl(0.5+0.3*adv+0.1*w,0.3,0.92);big=0.25+0.4*w}
+  else if(f.sd>=0.45){cls='Showdown médio';bet=cl(0.25+0.35*adv-0.15*w,0.05,0.6);big=0.1}
+  else if(f.sd>=0.2){
+    if(dr>=0.10){cls='Semi-bluff (draw)';bet=cl(0.35+0.25*w+0.15*adv,0.2,0.75);big=0.35+0.3*w}
+    else{cls='Showdown fraco';bet=cl(0.1+0.2*adv,0,0.35);big=0.1}}
+  else{
+    if(dr>=0.12){cls='Draw forte (semi-bluff)';bet=cl(0.5+0.25*w+0.1*adv,0.3,0.85);big=0.4+0.3*w}
+    else if(dr>=0.06){cls='Draw fraco / backdoors';bet=cl(0.25+0.3*adv,0.1,0.6);big=0.15}
+    else{cls='Ar (blefe puro)';bet=cl(0.05+0.4*adv-0.25*w,0,0.55);big=0.1}}
+  if(adv<0.25) bet*=0.6;
+  return {check:1-bet,small:bet*(1-big),big:bet*big,cls};
+}
+function cbFeatures(hc,board,heroMap,vilMap,eqSims,advN,advSims){
+  const V=buildVillain(vilMap,board,new Set([...hc,...board]),false);
+  const eq=equity(hc,board,V,eqSims), sd=sdv(hc,board,V), adv=(rangeEq(heroMap,vilMap,board,advN,advSims)-0.5)/0.10;
+  return {eq,sd,adv,rEq:adv*0.10+0.5,wet:boardTexture(board).wet};
+}
+function newCB(){
+  const pos=pick(['UTG','CO','BTN']), hs=strat('rfi-'+pos.toLowerCase()), bs=strat('bb-'+pos.toLowerCase());
+  const heroMap=new Map(), vilMap=new Map();
+  for(const h of ALL){heroMap.set(h.name,hs[h.name].raise); vilMap.set(h.name,bs[h.name].call)}
+  let best=null;
+  for(let t=0;t<3;t++){
+    const hc=pick(combosOf(sampleHand(heroMap),new Set())).slice(), board=[];
+    while(board.length<3){const c=(Math.random()*52)|0; if(!hc.includes(c)&&!board.includes(c)) board.push(c)}
+    const f=cbFeatures(hc,board,heroMap,vilMap,700,24,80), s=cbStrat(f), mix=1-Math.max(s.check,s.small,s.big);
+    if(!best||mix>best.mix) best={mix,hc,board};
+  }
+  const f=cbFeatures(best.hc,best.board,heroMap,vilMap,4000,40,120);
+  S.cb={pos,hc:best.hc,board:best.board,f,s:cbStrat(f),tex:boardTexture(best.board),label:handLabel(best.hc,best.board),ans:false};
+}
+function renderCB(){
+  if(!S.cb)newCB();
+  const p=S.cb, ans=p.ans, pot=5.5;
+  let vd='';
+  if(ans){
+    const s=p.s, f=s[p.act], mx=Math.max(s.check,s.small,s.big), sc=mx?Math.min(1,f/mx):0, [cls,title]=gradeCls(sc,f);
+    if(!p.scored){p.scored=1;tally('cb',sc)}
+    const nm={check:'Check',small:'Bet 33%',big:'Bet 75%'};
+    const best=['check','small','big'].reduce((a,b)=>s[b]>s[a]?b:a,'check');
+    const advTxt=p.f.rEq>0.55?'Você tem <b>vantagem de range</b> clara: aposte pequeno e com alta frequência.':p.f.rEq>0.51?'Vantagem de range moderada: mistura de apostas pequenas e checks.':'Pouca vantagem de range: o check ganha frequência e as apostas ficam polarizadas.';
+    vd=vbox(cls,title,`<div class="mut">${p.label}: você escolheu <b>${nm[p.act]}</b> (${Math.round(f*100)}%). Melhor ação: <b>${nm[best]}</b>.</div>
+      ${bar2([{p:s.check,c:'fold',l:'Check'},{p:s.small,c:'call',l:'33%'},{p:s.big,c:'raise',l:'75%'}])}
+      <ul class="mut" style="margin:6px 0 0 18px;padding:0">
+       <li>Textura: <b>${p.tex.label}</b></li>
+       <li>Equity do seu range vs range do BB nessa board: <b>${(p.f.rEq*100).toFixed(1)}%</b>. ${advTxt}</li>
+       <li>Sua mão: <b>${p.label}</b> — classe: <b>${s.cls}</b>. Vence ${(p.f.sd*100).toFixed(0)}% do range do BB hoje; equity total ${(p.f.eq*100).toFixed(0)}%.</li></ul>`,'cb:next');
+  }
+  document.getElementById('app').innerHTML=`${modStats('cb')}
+   <div class="grid2"><div>
+    <div class="felt"><div class="pos">Você: ${p.pos} · Flop</div>
+     <div class="sit">Você abriu 2.5bb no ${p.pos} e o BB pagou. Pote <b>${pot}bb</b>. O BB dá <b>check</b>; você age em posição.</div>
+     <div class="cards">${p.board.map(c=>cardEl(intCard(c),true)).join('')}</div>
+     <div class="cards">${p.hc.map(c=>cardEl(intCard(c))).join('')}</div></div>
+    <div class="acts"><button class="a-fold" data-do="cb:check" ${ans?'disabled':''}>Check<small>tecla C</small></button>
+     <button class="a-call" data-do="cb:small" ${ans?'disabled':''}>Bet 33% (${(pot/3).toFixed(1)}bb)<small>tecla S</small></button>
+     <button class="a-raise" data-do="cb:big" ${ans?'disabled':''}>Bet 75% (${(pot*0.75).toFixed(1)}bb)<small>tecla B</small></button></div>${vd}</div>
+    <div class="card"><b>Como funciona</b>
+     <p class="mut">Sorteamos uma mão do seu range de abertura e uma flop. O range do BB é o seu range de call vs o open. Medimos três coisas por simulação: a <b>vantagem de range</b> (equity média do seu range), a <b>textura</b> da board e a sua mão (valor de showdown e potencial de draw).</p>
+     <p class="mut">A estratégia de referência é um <b>modelo heurístico</b> que imita tendências conhecidas de solvers (bet pequeno frequente em boards secas com vantagem; mais checks e apostas polarizadas em boards baixas e conectadas). Não é saída de um solver real.</p></div></div>`;
+}
+function cbAnswer(a){ if(!S.cb||S.cb.ans)return; S.cb.act=a; S.cb.ans=true; render(); }
+
+/* ====================== Despacho dos novos módulos ====================== */
+function doAct(s){
+  const [m,a]=s.split(':');
+  if(m==='sf'){ if(a==='next'){newSF();return render()} return sfAnswer(a) }
+  if(m==='cb'){ if(a==='next'){newCB();return render()} return cbAnswer(a) }
+  if(m==='ic'){ if(a==='next'){newICM();return render()} if(a==='calc') return icCalc(); return icAnswer(a) }
+}
+function changeNew(e){
+  const id=e.target.id, v=e.target.value;
+  if(id==='sfmode'){S.sf.mode=v;newSF();render()}
+  else if(id==='sfstack'){S.sf.stackSel=v;newSF();render()}
+  else if(id==='icpre'){S.ic.preset=v;newICM();render()}
+}
+function keyNew(k,e){
+  const next=k==='enter'||k===' ';
+  if(S.tab==='cb'){
+    if(next){ if(S.cb&&S.cb.ans){e.preventDefault();newCB();render()} }
+    else if(k==='c')cbAnswer('check'); else if(k==='s')cbAnswer('small'); else if(k==='b')cbAnswer('big');
+  } else if(S.tab==='sf'){
+    if(next){ if(S.sf.ans){e.preventDefault();newSF();render()} }
+    else if(k==='p'||k==='c')sfAnswer('act'); else if(k==='f')sfAnswer('fold');
+  } else if(S.tab==='icm'){
+    if(next){ if(S.ic.ans){e.preventDefault();newICM();render()} }
+    else if(k==='p')icAnswer('push'); else if(k==='f')icAnswer('fold');
+  }
+}
+
+/* ====================== Eventos ====================== */
+function render(){ ({pre:renderPre,post:renderPost,cb:renderCB,sf:renderSF,icm:renderICM,rng:renderRng})[S.tab](); document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===S.tab)); }
+document.getElementById('nav').onclick=e=>{const t=e.target.dataset.t;if(t){S.tab=t;if(t==='pre'&&!S.cur)newHand();render()}};
+document.getElementById('app').addEventListener('click',e=>{
+  const dd=e.target.closest('[data-do]'); if(dd){doAct(dd.dataset.do);return}
+  const t=e.target.closest('[data-act],[data-sc],[data-pf],#next,#pfnext,#reset,#save,#restore');
+  if(!t) return;
+  if(t.dataset.act) return answer(t.dataset.act);
+  if(t.dataset.sc){S.active.has(t.dataset.sc)?S.active.delete(t.dataset.sc):S.active.add(t.dataset.sc);persist();newHand();return render()}
+  if(t.dataset.pf){S.pfChoice=t.dataset.pf;S.pfAns=true;return render()}
+  if(t.id==='next'){newHand();return render()}
+  if(t.id==='pfnext'){newPostflop();return render()}
+  if(t.id==='reset'){S.stats={total:0,score:0,ok:0,streak:0,best:0,by:{}};persist();return render()}
+  if(t.id==='save'){
+    const sc=BYID[S.rngSel];
+    S.custom[S.rngSel]={raise:document.getElementById('er').value,call:sc.L.call?document.getElementById('ec').value:''};
+    store.set('pk_ranges',S.custom);delete stratCache[S.rngSel];return render()}
+  if(t.id==='restore'){delete S.custom[S.rngSel];store.set('pk_ranges',S.custom);delete stratCache[S.rngSel];return render()}
+});
+document.getElementById('app').addEventListener('change',e=>{
+  if(e.target.id==='hard'){S.hardOnly=e.target.checked;newHand();render()}
+  if(e.target.id==='street'){S.pfStreet=e.target.value;newPostflop();render()}
+  if(e.target.id==='rsel'){S.rngSel=e.target.value;render()}
+  changeNew(e);
+});
+document.addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  const k=e.key.toLowerCase();
+  if(S.tab==='pre'){
+    if(k==='enter'||k===' '){ if(S.answered){e.preventDefault();newHand();render()} }
+    else if(k==='r') answer('raise'); else if(k==='c') answer('call'); else if(k==='f') answer('fold');
+  } else if(S.tab==='post'){
+    if(k==='enter'||k===' '){ if(S.pfAns){e.preventDefault();newPostflop();render()} }
+    else if((k==='c'||k==='f')&&!S.pfAns){S.pfChoice=k==='c'?'call':'fold';S.pfAns=true;render()}
+  } else keyNew(k,e);
+});
+
+newHand(); render();
+</script>
+</body>
+</html>
