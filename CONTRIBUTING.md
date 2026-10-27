@@ -1,7 +1,7 @@
 # Como contribuir
 
 1. Crie uma branch: `git checkout -b minha-alteracao`
-2. Edite `poker-trainer.html` e teste abrindo no navegador (ou `python -m http.server` na pasta).
+2. Edite `index.html` e teste abrindo no navegador (ou `python -m http.server` na pasta).
 3. Faça commit e abra um Pull Request descrevendo a mudança.
 
 ## Onde mexer

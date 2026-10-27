@@ -1,6 +1,10 @@
 # Poker Trainer
 
-Simulador de treino de poker (NLHE 6-max, 100bb) em um único arquivo HTML, sem dependências. Basta abrir `poker-trainer.html` no navegador.
+Simulador de treino de poker (NLHE 6-max, 100bb) em um único arquivo HTML, sem dependências.
+
+**Jogar online:** https://clecioferreiracontador-byte.github.io/poker-trainer/
+
+Ou baixe o repositório e abra `index.html` no navegador.
 
 ## Módulos
 
@@ -19,4 +23,4 @@ Os ranges e a estratégia de c-bet são **aproximações**, não saída de um so
 
 ## Como atualizar
 
-Veja [CONTRIBUTING.md](CONTRIBUTING.md). Em resumo: os ranges ficam no array `SCEN` dentro do `<script>` do `poker-trainer.html`.
+Veja [CONTRIBUTING.md](CONTRIBUTING.md). Em resumo: os ranges ficam no array `SCEN` dentro do `<script>` do `index.html`.
